@@ -1,8 +1,12 @@
 /*
  * digital_7_segment_clock.c
  *
- * Created: 25/02/2019 16:35:38
- * Author : Muhammad Rafly Arya Putra (13216064) & Muhammad Irfaan S. (13216047)
+ * Initialized: 25/02/2019 16:35:38
+ * Last edited: 19:19 Thursday,07 Maret 2019
+ * Author : Muhammad Rafly Arya Putra (13216064) 
+ 			Muhammad Irfaan S. (13216047)
+			Gusti Triandi Winata (13216091)
+* development repository : https://github.com/sanggusti/avr_digital_clock
  */ 
 
 #define CLOCK_DISPLAY 0

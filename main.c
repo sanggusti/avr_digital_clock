@@ -5,10 +5,11 @@
  * Author : Muhammad Rafly Arya Putra (13216064) & Muhammad Irfaan S. (13216047)
  */ 
 
-#define CLOCK 0
-#define  1
-#define CLOCK 2
-#define CLOCK 3
+#define CLOCK_DISPLAY 0
+#define HOUR_SET 1
+#define MINUTE_SET 2
+#define SECOND_SET 3
+#define MAX_STATE 4
 
 #define F_CPU 16000000L
 #include <avr/io.h>
@@ -16,15 +17,18 @@
 #include <avr/interrupt.h>
 
 
-volatile int state = CLOCK;
-int clk_hour = 21;
-volatile int clk_minute = 42;
-volatile int clk_second = 00;
+volatile int state = CLOCK_DISPLAY;
+volatile int clk_hour = 23;
+volatile int clk_minute = 59;
+volatile int clk_second = 30;
 
 void Init_Ext_Int(void);
 void init_int(void);
 void clockLimitter(void);
-void showClock (int hh, int mm, int ss);
+//void showClock (int hh, int mm, int ss);
+void showHour (int hh);
+void showMinute (int mm);
+void showSecond (int ss);
 void showDigit (int number, int digit);
 void digitOn(int digit);
 void digitOff(int digit);
@@ -32,13 +36,36 @@ void segmentDisplay(int number);
 
 ISR(TIMER1_COMPA_vect)
 {
-	clk_second++;
+	if (state==CLOCK_DISPLAY)
+		clk_second++;
+}
+
+ISR (INT1_vect)
+{
+	//function to change hour, minute, or second
+	if (state==HOUR_SET) {
+		clk_hour++;
+		if (clk_hour>23)
+			clk_hour=0;
+	}
+	else if (state==MINUTE_SET) {
+		clk_minute++;
+		if (clk_minute>59)
+			clk_minute=0;
+	}
+	else if (state==SECOND_SET) {
+		clk_second++;
+		if (clk_second>59)
+			clk_second=0;
+	}
 }
 
 ISR (INT0_vect)
 {
-	/* interrupt code here */
-	clk_minute++;
+	//function to change the state of the clock
+	state++;
+	if (state>=MAX_STATE)
+		state=CLOCK_DISPLAY;
 }
 
 int main(void)
@@ -52,8 +79,18 @@ int main(void)
     init_int();
 
 	while (1) {
-		clockLimitter();
-		showClock(clk_hour,clk_minute,clk_second);
+		if (state==CLOCK_DISPLAY) {
+			clockLimitter();
+			showHour(clk_hour);
+			showMinute(clk_minute);
+			showSecond(clk_second);
+		}
+		else if (state==HOUR_SET)
+			showHour(clk_hour);
+		else if (state==MINUTE_SET)
+			showMinute(clk_minute);
+		else if (state==SECOND_SET)
+			showSecond(clk_second);
 	}
 	
 	return 0;
@@ -71,30 +108,57 @@ void init_int(void)
 void Init_Ext_Int(void)
 {
 	DDRD &= ~(1 << DDD2);     // Clear the PD2 pin
-	// PD2 (PCINT0 pin) is now an input
-
+	DDRD &= ~(1 << DDD3);     // Clear the PD3 pin
+	// PD2 (PCINT0 pin) and PD3 (PCINT1) are now an input
 	PORTD |= (1 << PORTD2);    // turn On the Pull-up
-	// PD2 is now an input with pull-up enabled
+	PORTD |= (1 << PORTD3);    // turn On the Pull-up
+	// PD2 and PD3 are now an input with pull-up enabled
 
 	EICRA |= (1 << ISC01);    // set INT0 to trigger on falling edge
+	EICRA |= (1 << ISC11);    // set INT1 to trigger on falling edge
 	EIMSK |= (1 << INT0);     // Turns on INT0
+	EIMSK |= (1 << INT1);     // Turns on INT1
 }
 
 void clockLimitter(void) {
-    if (clk_second > 59) {
-	    clk_second -= 60;
-	    clk_minute++;
-	    if (clk_minute > 59) {
-		    clk_minute -= 60;
-		    clk_hour++;
-		    if (clk_hour > 23) {
-			    clk_hour = 0;
-		    }
-	    }
-    }
+	if (clk_second > 59) {
+		clk_second -= 60;
+		clk_minute++;
+		if (clk_minute > 59) {
+			clk_minute -= 60;
+			clk_hour++;
+			if (clk_hour > 23) {
+				clk_hour = 0;
+			}
+		}
+	}
 }
 
-void showClock (int hh, int mm, int ss) {
+void showHour (int hh) {
+	for (int digit= 2; digit >=1; digit--)
+	{
+		showDigit(hh % 10, digit);
+		hh= hh/10;
+	}
+}
+
+void showMinute (int mm) {
+	for (int digit= 4; digit >=3; digit--)
+	{
+		showDigit(mm % 10, digit);
+		mm= mm/10;
+	}
+}
+
+void showSecond (int ss) {
+	for (int digit= 6; digit >=5; digit--)
+	{
+		showDigit(ss % 10, digit);
+		ss= ss/10;
+	}
+}
+
+/*void showClock (int *hh, int *mm, int *ss) {
 	for (int digit= 6; digit >=5; digit--)
 	{
 		showDigit(ss % 10, digit);
@@ -110,7 +174,7 @@ void showClock (int hh, int mm, int ss) {
 		showDigit(hh % 10, digit);
 		hh= hh/10;
 	}
-}
+}*/
 
 void showDigit (int number, int digit) {
 	digitOn(digit);

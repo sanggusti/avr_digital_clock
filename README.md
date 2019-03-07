@@ -11,7 +11,7 @@ Tools:
 * 2 buttons
 
 Results
-![full display](./src/20190307_192816.jpg)
+![full display](./src/20190307_192822.jpg)
 
 The schematics (using fritzing)
 ***
